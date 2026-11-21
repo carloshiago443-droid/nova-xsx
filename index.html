@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12160F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#E8E7DA" media="(prefers-color-scheme: light)">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Operação 365</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Operação 365">
+<meta name="application-name" content="Operação 365">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column like a field service card. Three tabs (Hoje, Diário, Patentes) under the masthead; overlays for promotion and urge mode. */
+:root {
+  --bg: #E8E7DA;
+  --surface: #F3F2E8;
+  --fg: #20261A;
+  --muted: #5E6552;
+  --line: #C9C8B4;
+  --accent: #4A5D23;
+  --accent-fg: #F3F2E8;
+  --brass: #8F6A12;
+  --danger: #8E3B2A;
+  --overlay: rgba(232, 231, 218, 0.97);
+  --font-display: "Big Shoulders Stencil Display", Impact, "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12160F; --surface: #1B2116; --fg: #E8E6D4; --muted: #9BA08A; --line: #2E3626;
+    --accent: #A3BC5C; --accent-fg: #12160F; --brass: #D8AE45; --danger: #D98468;
+    --overlay: rgba(18, 22, 15, 0.97);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12160F; --surface: #1B2116; --fg: #E8E6D4; --muted: #9BA08A; --line: #2E3626;
+  --accent: #A3BC5C; --accent-fg: #12160F; --brass: #D8AE45; --danger: #D98468;
+  --overlay: rgba(18, 22, 15, 0.97);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: calc(20px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  background-image: repeating-linear-gradient(135deg, transparent 0 13px, color-mix(in srgb, var(--fg) 3.5%, transparent) 13px 14px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 520px; margin-inline: auto; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.brand { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; }
+.top small { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.tabs button { border: 0; border-radius: 0; background: transparent; min-height: 44px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.tabs button + button { border-left: 1px solid var(--line); }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; min-width: 0; }
+
+.rank { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.insignia { width: 168px; max-width: 100%; height: 76px; margin-bottom: 4px; }
+.label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.days { font-family: var(--font-display); font-size: 112px; line-height: 0.9; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+.rankname { font-family: var(--font-display); font-size: 34px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--brass); line-height: 1.1; text-wrap: balance; }
+
+.progress { width: 100%; margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.bar { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--accent); transition: width 0.4s ease; }
+.progress p { margin: 0; font-size: 14px; color: var(--muted); }
+.progress p strong { color: var(--fg); font-weight: 600; }
+
+.actions { display: flex; flex-direction: column; gap: 10px; }
+button, input, textarea { font: inherit; }
+button {
+  min-height: 48px; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--fg); font-weight: 600; cursor: pointer;
+}
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+button.urge { background: var(--brass); color: var(--bg); border-color: var(--brass); font-size: 17px; }
+button.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.row { display: flex; gap: 10px; }
+.row > button { flex: 1; }
+
+.confirm { border-color: var(--danger); display: flex; flex-direction: column; gap: 14px; }
+.confirm p { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button { min-height: 40px; padding: 6px 14px; font-weight: 500; font-size: 14px; }
+.chips button[aria-pressed="true"] { background: var(--danger); border-color: var(--danger); color: var(--bg); }
+
+h2 { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 4px; }
+.card p.lead { margin: 0 0 16px; color: var(--muted); font-size: 15px; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 14px; font-weight: 500; }
+.field input, .field textarea {
+  padding: 8px 12px; border-radius: 4px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--fg); width: 100%;
+}
+.field input { min-height: 48px; font-family: var(--font-mono); font-size: 18px; }
+.field textarea { min-height: 88px; resize: vertical; font-size: 16px; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat b { font-family: var(--font-mono); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.ladder { list-style: none; margin: 0; padding: 0; }
+.ladder li {
+  display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 12px;
+  padding: 11px 0; border-top: 1px solid var(--line); min-width: 0;
+}
+.ladder li:first-child { border-top: 0; }
+.ladder .d { font-family: var(--font-mono); font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ladder .n { font-weight: 500; overflow-wrap: anywhere; }
+.ladder .s { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ladder li.done .n { color: var(--muted); }
+.ladder li.done .s { color: var(--accent); }
+.ladder li.now { background: var(--bg); margin-inline: -12px; padding-inline: 12px; border-radius: 4px; border-top-color: transparent; }
+.ladder li.now .n { color: var(--brass); font-weight: 600; }
+.ladder li.now .s { color: var(--brass); }
+.ladder li.lock .n { color: var(--muted); }
+
+.medals { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.medal { border: 1px solid var(--line); border-radius: 4px; padding: 12px 8px; text-align: center; display: flex; flex-direction: column; gap: 2px; background: var(--bg); min-width: 0; }
+.medal b { font-family: var(--font-display); font-size: 30px; line-height: 1; letter-spacing: 0.03em; }
+.medal span { font-size: 12px; color: var(--muted); }
+.medal em { font-style: normal; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+.medal.got { border-color: var(--brass); }
+.medal.got b, .medal.got em { color: var(--brass); }
+.medal.off b { color: var(--muted); }
+.medal.off em { color: var(--muted); }
+
+.cal-head, .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-head span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: center; text-transform: uppercase; }
+.cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center; position: relative;
+  border: 1px solid var(--line); border-radius: 3px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); min-width: 0;
+}
+.cell.blank { border: 0; }
+.cell.clean { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.cell.relapse { border: 2px solid var(--danger); color: var(--danger); font-weight: 600; }
+.cell.today { outline: 2px solid var(--brass); outline-offset: 1px; }
+.cell.hasnote::after { content: ""; position: absolute; bottom: 3px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--line); }
+.legend i.c { background: var(--accent); border-color: var(--accent); }
+.legend i.r { border: 2px solid var(--danger); }
+
+.trig { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.trig li { display: grid; grid-template-columns: 120px 1fr 28px; align-items: center; gap: 10px; font-size: 14px; }
+.trig .tb { height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.trig .tb span { display: block; height: 100%; background: var(--danger); }
+.trig b { font-family: var(--font-mono); font-weight: 500; text-align: right; }
+
+.notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.notes li { border-top: 1px solid var(--line); padding-top: 12px; overflow-wrap: anywhere; }
+.notes li:first-child { border-top: 0; padding-top: 0; }
+.notes time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: block; }
+.notes p { margin: 2px 0 0; white-space: pre-wrap; }
+.empty { color: var(--muted); font-size: 15px; margin: 0; }
+
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.status { min-height: 20px; font-size: 14px; color: var(--accent); margin: 0; }
+
+.ov {
+  position: fixed; inset: 0; z-index: 50; background: var(--bg);
+  overflow-y: auto; display: flex; align-items: flex-start; justify-content: center;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.ov[hidden] { display: none; }
+.ov-in { width: 100%; max-width: 440px; margin-block: auto; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+.ov-in h2 { font-size: 34px; margin: 0; text-wrap: balance; }
+.ov-in p { margin: 0; color: var(--muted); }
+.ov-in .rankname { font-size: 44px; }
+.ov-in .actions, .ov-in .row { width: 100%; }
+.breath { position: relative; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; }
+.circle { position: absolute; inset: 0; border-radius: 50%; border: 3px solid var(--brass); background: var(--surface); animation: breathe 12s ease-in-out infinite; }
+.breath span { position: relative; font-family: var(--font-display); font-size: 30px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brass); }
+@keyframes breathe { 0% { transform: scale(0.55); } 33% { transform: scale(1); } 50% { transform: scale(1); } 100% { transform: scale(0.55); } }
+.timer { font-family: var(--font-mono); font-size: 32px; font-variant-numeric: tabular-nums; }
+.sharecard { width: 270px; max-width: 70%; height: auto; aspect-ratio: 1080 / 1560; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.btn { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-weight: 600; text-decoration: none; }
+.btn:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.todo { list-style: none; margin: 0; padding: 0; width: 100%; text-align: left; display: flex; flex-direction: column; gap: 6px; }
+.todo label { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); cursor: pointer; }
+.todo input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+
+/* ---- Refinamento visual ---- */
+.top { align-items: flex-end; }
+.top > div { display: flex; flex-direction: column; gap: 3px; }
+.today { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; padding-bottom: 3px; }
+.card { border-radius: 8px; box-shadow: 0 14px 28px -24px rgba(0, 0, 0, 0.55); }
+button { transition: transform 0.08s ease, filter 0.15s ease; }
+button:active { transform: translateY(1px) scale(0.995); }
+button.urge { min-height: 58px; font-family: var(--font-display); font-weight: 800; font-size: 23px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(3, 1fr);
+  border: 0; border-top: 1px solid var(--line); border-radius: 0; overflow: visible; background: var(--surface);
+  padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+.tabs button { position: relative; border: 0; border-radius: 0; background: transparent; min-height: 62px; padding: 8px 4px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.tabs button + button { border-left: 0; }
+.tabs button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabs button[aria-pressed="true"] { background: transparent; color: var(--brass); }
+.tabs button[aria-pressed="true"]::before { content: ""; position: absolute; top: -1px; left: 24%; right: 24%; height: 3px; background: var(--brass); border-radius: 0 0 3px 3px; }
+
+.rank.hero { position: relative; padding: 30px 20px 24px; background-image: repeating-linear-gradient(135deg, transparent 0 9px, color-mix(in srgb, var(--fg) 3.5%, transparent) 9px 10px); }
+.rank.hero::before, .rank.hero::after { content: ""; position: absolute; width: 22px; height: 22px; border: 2px solid var(--brass); pointer-events: none; }
+.rank.hero::before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+.rank.hero::after { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+.ringwrap { position: relative; width: 240px; max-width: 100%; aspect-ratio: 1; margin-bottom: 10px; }
+.ring { width: 100%; height: 100%; display: block; }
+.rg-tick { fill: none; stroke: var(--line); stroke-width: 6; stroke-dasharray: 0.8 4.2; }
+.rg-track { fill: none; stroke: var(--line); stroke-width: 10; opacity: 0.55; }
+.rg-fill { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: var(--off, 100); animation: ringfill 1s 0.15s ease-out both; }
+@keyframes ringfill { from { stroke-dashoffset: 100; } }
+.ring-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.ring-in .days { font-size: 100px; }
+.rank.hero .insignia { width: 124px; height: 56px; margin: 4px 0 0; }
+.rank.hero .rankname { margin-top: 2px; }
+.rank.hero .progress { margin-top: 10px; }
+.rank.hero .progress p { text-align: center; }
+
+.order { display: flex; flex-direction: column; gap: 10px; padding: 18px 4px; border-top: 1px dashed var(--muted); border-bottom: 1px dashed var(--muted); min-width: 0; }
+.o-head { display: flex; justify-content: space-between; gap: 12px; }
+.o-text { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1.12; letter-spacing: 0.02em; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
+
+.ladder { position: relative; padding-left: 24px; }
+.ladder::before { content: ""; position: absolute; left: 5px; top: 18px; bottom: 18px; width: 2px; background: var(--line); }
+.ladder li { position: relative; }
+.ladder li::before { content: ""; position: absolute; left: -24px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); }
+.ladder li.done::before { background: var(--accent); border-color: var(--accent); }
+.ladder li.now::before { left: -12px; background: var(--brass); border-color: var(--brass); box-shadow: 0 0 0 4px var(--surface), 0 0 0 5px var(--brass); }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+.enter > * { animation: rise 0.42s ease-out both; }
+.enter > *:nth-child(2) { animation-delay: 0.05s; }
+.enter > *:nth-child(3) { animation-delay: 0.1s; }
+.enter > *:nth-child(4) { animation-delay: 0.15s; }
+.enter > *:nth-child(5) { animation-delay: 0.2s; }
+.enter > *:nth-child(n+6) { animation-delay: 0.25s; }
+.sp-mark path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw 0.55s ease-out forwards; }
+.sp-mark path:nth-child(3) { animation-delay: 0.1s; }
+.sp-mark path:nth-child(2) { animation-delay: 0.35s; }
+.sp-mark path:nth-child(1) { animation-delay: 0.6s; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } .circle { animation: none; } .enter > *, .rg-fill { animation: none !important; } .sp-mark path { animation: none; stroke-dashoffset: 0; } button { transition: none; } }
+@media (max-width: 380px) { .days { font-size: 92px; } .rankname { font-size: 28px; } .trig li { grid-template-columns: 96px 1fr 24px; } }
+
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+.brand b { color: var(--brass); font-weight: 800; }
+.by { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+.stats { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat b { font-size: 24px; }
+.stats.two { grid-template-columns: 1fr 1fr; gap: 16px; }
+.stat .label { font-size: 10px; line-height: 1.3; }
+details.bk { padding: 0; }
+details.bk summary { min-height: 52px; display: flex; align-items: center; padding: 0 20px; font-weight: 600; cursor: pointer; }
+details.bk[open] summary { border-bottom: 1px solid var(--line); }
+details.bk .in { padding: 16px 20px 20px; }
+details.bk .field textarea { font-family: var(--font-mono); font-size: 12px; min-height: 96px; word-break: break-all; }
+
+.ov-in p.quote { color: var(--fg); font-size: 19px; font-style: italic; text-wrap: balance; }
+.pinlock { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: flex; align-items: center; justify-content: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) max(24px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 24px) max(24px, env(safe-area-inset-left, 0px)); }
+.lk-in { width: 100%; max-width: 320px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+.lk-in h2 { font-size: 30px; margin: 0; }
+.lk-in input { width: 100%; min-height: 56px; text-align: center; font-family: var(--font-mono); font-size: 28px; letter-spacing: 0.4em; padding: 8px 12px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.lk-in input:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.lk-in p { margin: 0; }
+.chl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.chl li { display: flex; flex-direction: column; gap: 6px; }
+.chl .t { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.chl .t b { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.chl li.done .t span { color: var(--accent); font-weight: 600; }
+.bl { list-style: none; margin: 0; padding: 0; }
+.bl li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); min-width: 0; }
+.bl li:first-child { border-top: 0; }
+.bl li.me { background: var(--bg); margin-inline: -12px; padding-inline: 12px; border-radius: 4px; border-top-color: transparent; }
+.bl .p { font-family: var(--font-mono); color: var(--muted); font-size: 14px; }
+.bl .n { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.bl .n small { font-weight: 400; font-size: 12px; color: var(--brass); font-family: var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.bl b { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.ch-ax { stroke: var(--line); stroke-width: 1; }
+.ch-past { fill: var(--accent); }
+.ch-cur { fill: var(--brass); }
+.ch-v { fill: var(--fg); font: 500 11px var(--font-mono); }
+.ch-l { fill: var(--muted); font: 500 9px var(--font-mono); }
+.splash {
+  position: fixed; inset: 0; z-index: 100; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) max(24px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 24px) max(24px, env(safe-area-inset-left, 0px));
+  transition: opacity 0.5s ease;
+}
+.splash.out { opacity: 0; pointer-events: none; }
+.sp-in { width: 100%; max-width: 360px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+.sp-mark { width: 84px; height: 84px; }
+.sp-name { font-family: var(--font-display); font-weight: 800; margin: 4px 0 0; line-height: 0.9; text-transform: uppercase; letter-spacing: 0.05em; font-size: clamp(38px, 12vw, 64px); }
+.sp-name span { display: block; }
+.sp-name .n { font-size: clamp(100px, 36vw, 168px); color: var(--brass); letter-spacing: 0.02em; line-height: 0.85; }
+.sp-by { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.sp-bar { width: 100%; height: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 2px; overflow: hidden; margin-top: 20px; }
+.sp-bar span { display: block; height: 100%; width: 0; background: var(--accent); }
+.sp-label { width: 100%; display: flex; justify-content: space-between; gap: 12px; margin: 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.sp-label b { font-weight: 500; color: var(--fg); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="splash" id="splash" role="status" aria-live="polite">
+  <div class="sp-in">
+    <svg class="sp-mark" viewBox="0 0 84 84" aria-hidden="true">
+      <g fill="none" stroke="var(--brass)" stroke-width="7" stroke-linecap="square" stroke-linejoin="miter">
+        <path pathLength="100" d="M18 34 L42 20 L66 34"/><path pathLength="100" d="M18 50 L42 36 L66 50"/><path pathLength="100" d="M18 66 L42 52 L66 66"/>
+      </g>
+    </svg>
+    <h1 class="sp-name"><span>Operação</span><span class="n">365</span></h1>
+    <p class="sp-by">by NOVAXS</p>
+    <div class="sp-bar" aria-hidden="true"><span id="sp-fill"></span></div>
+    <p class="sp-label"><span id="sp-txt">Alistando recrutas</span><b id="sp-pct">0%</b></p>
+  </div>
+</div>
+
+<div class="pinlock" id="lock" hidden role="dialog" aria-modal="true" aria-label="Trava com PIN">
+  <div class="lk-in">
+    <span class="label">Operação 365</span>
+    <h2>Digite seu PIN</h2>
+    <input id="pin-in" type="password" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="PIN">
+    <p class="note" id="pin-err" role="alert"></p>
+    <button class="primary" data-act="unlock" style="width:100%">Entrar</button>
+    <button data-act="bio-unlock" id="bio-btn" hidden style="width:100%">Usar biometria</button>
+    <p class="note">Esqueceu o PIN? Limpe os dados do site no Chrome e restaure pelo código de backup.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div><span class="brand">Operação <b>365</b></span><span class="by">by NOVAXS</span></div>
+    <time class="today" id="today-lbl"></time>
+  </header>
+  <nav class="tabs" id="tabs" hidden aria-label="Seções">
+    <button data-tab="hoje" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 L19.5 5.5 V11.5 C19.5 16 16.5 19.6 12 21.5 C7.5 19.6 4.5 16 4.5 11.5 V5.5 Z"/><path d="M9 11.8 L11.3 14 L15.2 9.6"/></svg><span>Hoje</span></button>
+    <button data-tab="diario" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10.5 H20 M8.5 3.5 V7.5 M15.5 3.5 V7.5"/></svg><span>Diário</span></button>
+    <button data-tab="patentes" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10.5 L12 5 L19 10.5 M5 16 L12 10.5 L19 16 M5 21.5 L12 16 L19 21.5"/></svg><span>Patentes</span></button>
+  </nav>
+  <main id="app" class="col" aria-live="polite"></main>
+  <p class="note" id="storage-note"></p>
+</div>
+<div class="ov" id="ov" hidden role="dialog" aria-modal="true" aria-label="Aviso"></div>
+
+<script>
+(function () {
+  var RANKS = [
+    [0, "Recruta"], [7, "Soldado"], [14, "Cabo"], [21, "3º Sargento"], [30, "2º Sargento"],
+    [45, "1º Sargento"], [60, "Subtenente"], [90, "Aspirante"], [120, "2º Tenente"],
+    [150, "1º Tenente"], [200, "Capitão"], [250, "Major"], [300, "Tenente-Coronel"], [365, "Coronel"]
+  ];
+  var MEDALS = [[1, "24 horas"], [7, "1 semana"], [30, "1 mês"], [60, "60 dias"], [100, "100 dias"], [180, "6 meses"], [365, "1 ano"]];
+  var TRIGGERS = ["Tédio", "Estresse", "Noite sozinho", "Redes sociais", "Cansaço", "Outro"];
+  var TASKS = ["Saia do cômodo onde você está", "Beba um copo de água", "Faça 20 flexões ou agachamentos", "Mande mensagem para alguém"];
+  var URGE_SECONDS = 600;
+  var LS_KEY = "op365-v1";
+  var fsOk = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  var msgT = null;
+  var state = defaults();
+  var docRef = null;
+  var dl = null;
+  var tab = "hoje";
+  var confirming = false;
+  var pendingTrig = "";
+  var noteDraft = null;
+  var message = "";
+  var lastD = -1;
+  var urgeStart = 0;
+  var urgeTimer = null;
+  var app = document.getElementById("app");
+  var tabsEl = document.getElementById("tabs");
+  var ov = document.getElementById("ov");
+  var noteEl = document.getElementById("storage-note");
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function utc(s) { var p = s.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]); }
+  function daysSince(s) { return Math.max(0, Math.round((utc(todayStr()) - utc(s)) / 86400000)); }
+  function addDays(s, n) {
+    var t = new Date(utc(s) - n * 86400000);
+    return t.getUTCFullYear() + "-" + pad(t.getUTCMonth() + 1) + "-" + pad(t.getUTCDate());
+  }
+  function fmt(ds) { return ds.slice(8) + "/" + ds.slice(5, 7); }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function rankIndex(d) {
+    var i = 0;
+    for (var k = 0; k < RANKS.length; k++) { if (d >= RANKS[k][0]) i = k; }
+    return i;
+  }
+
+  function insignia(idx) {
+    var s = '<svg class="insignia" viewBox="0 0 168 76" role="img" aria-label="Insígnia de ' + RANKS[idx][1] + '">';
+    var col = 'var(--brass)';
+    if (idx === 0) {
+      s += '<circle cx="84" cy="38" r="22" fill="none" stroke="' + col + '" stroke-width="3" stroke-dasharray="4 6"/>';
+    } else if (idx <= 6) {
+      var gap = 10, total = (idx - 1) * gap, y0 = 38 - total / 2 - 6;
+      for (var i = 0; i < idx; i++) {
+        var y = y0 + i * gap;
+        s += '<path d="M54 ' + (y + 12) + ' L84 ' + y + ' L114 ' + (y + 12) + '" fill="none" stroke="' + col + '" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter"/>';
+      }
+    } else {
+      var n = idx - 6, w = 22, x0 = 84 - (n * w) / 2 + w / 2;
+      for (var j = 0; j < n; j++) {
+        var cx = x0 + j * w, cy = 38, R = 9, r = 3.7, pts = [];
+        for (var k = 0; k < 10; k++) {
+          var a = -Math.PI / 2 + k * Math.PI / 5, rad = k % 2 === 0 ? R : r;
+          pts.push((cx + rad * Math.cos(a)).toFixed(1) + "," + (cy + rad * Math.sin(a)).toFixed(1));
+        }
+        s += '<polygon points="' + pts.join(" ") + '" fill="' + col + '"/>';
+      }
+    }
+    return s + "</svg>";
+  }
+
+  var DAILY = [
+    "Disciplina é escolher o que você quer mais, não o que você quer agora.",
+    "Hoje você só precisa vencer hoje.",
+    "A vontade passa. O orgulho de ter resistido fica.",
+    "Quem manda em si mesmo não precisa de ninguém mandando.",
+    "Cada dia limpo é uma promoção que ninguém pode tirar de você.",
+    "Não conte os dias que faltam. Faça este dia valer.",
+    "Seu futuro agradece cada não que você diz hoje.",
+    "Um soldado não espera vontade para cumprir a missão.",
+    "Recomeçar não é voltar a zero. É voltar com experiência.",
+    "A força que você procura está na próxima decisão.",
+    "Mente limpa, posto firme.",
+    "Treino difícil forma patente alta.",
+    "Pequenas vitórias diárias constroem grandes patentes.",
+    "O hábito perde força toda vez que você não o alimenta.",
+    "Quem vence a si mesmo já venceu o dia.",
+    "Foco no objetivo. O resto é ruído.",
+    "Hoje é um bom dia para cumprir a sua palavra.",
+    "Respire fundo. Você já passou por coisa pior que esta vontade.",
+    "A constância vale mais que a intensidade.",
+    "Mantenha a linha. O grupo conta com você.",
+    "Desconforto de hoje, orgulho de amanhã.",
+    "Seu único adversário usa o seu nome.",
+    "Lembre por que você começou. Esse motivo ainda vale.",
+    "A energia que você guarda hoje vira disposição amanhã.",
+    "Cada manhã é um novo alistamento. Apresente-se.",
+    "Não negocie com a vontade. Ela sempre pede só mais um pouco.",
+    "Você não está sozinho no quartel. Peça apoio quando precisar.",
+    "Sono, água e movimento. A base de qualquer missão.",
+    "Se o dia está pesado, reduza a missão: chegue só até a noite.",
+    "O tédio passa mais rápido quando você se move.",
+    "Um passo firme vale mais que dez promessas.",
+    "A paciência também é uma forma de coragem.",
+    "O que você repete, você se torna. Repita o que te fortalece.",
+    "Ninguém sobe de patente sem enfrentar o dia ruim.",
+    "Antes de dormir, deixe o celular longe da cama.",
+    "Você é mais forte que um impulso de dez minutos.",
+    "Cuide da rotina e a rotina cuida de você.",
+    "Respeito próprio é a patente que mais pesa.",
+    "Um tropeço não encerra a missão. Desistir encerra.",
+    "Bateu a vontade? Levante e mude de ambiente.",
+    "Seja a versão de você que o seu eu de daqui a um ano vai agradecer.",
+    "Disciplina é liberdade em construção.",
+    "Quem aprende com a queda já está de pé.",
+    "Você constrói algo que ninguém vê, mas todos percebem.",
+    "Mais um dia, mais um degrau.",
+    "Honre o combinado que você fez consigo mesmo.",
+    "Mantenha a cabeça ocupada e o corpo em movimento.",
+    "A clareza chega para quem sustenta o caminho.",
+    "Coragem não é ausência de vontade. É agir apesar dela.",
+    "Faça o básico bem feito, todos os dias.",
+    "Ocupe o seu tempo com o que te faz crescer.",
+    "Seu progresso é seu. Ele vale mesmo que ninguém saiba.",
+    "Cuide do seu foco como cuida do seu posto.",
+    "A recompensa de hoje é dormir em paz com você mesmo.",
+    "O dia só termina quando a missão estiver cumprida.",
+    "Vá com calma, mas não pare.",
+    "Hoje o inimigo é o tédio. Treine, leia, converse.",
+    "Quem se organiza vence antes de começar.",
+    "Você já provou que consegue. Prove de novo hoje.",
+    "Sem pressa e sem pausa. Dia após dia."
+  ];
+  var WD = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+  var MO = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+  function updateDate() {
+    var el = document.getElementById("today-lbl");
+    if (!el) return;
+    var t = todayStr(), dt = new Date(utc(t));
+    el.textContent = WD[dt.getUTCDay()] + " " + t.slice(8) + " " + MO[+t.slice(5, 7) - 1];
+  }
+  function replay() {
+    app.classList.remove("enter");
+    void app.offsetWidth;
+    app.classList.add("enter");
+  }
+  function ring(pct) {
+    return '<svg class="ring" viewBox="0 0 240 240" role="img" aria-label="Progresso de ' + pct + '% até a próxima patente">' +
+      '<circle class="rg-tick" cx="120" cy="120" r="116" pathLength="120"/>' +
+      '<circle class="rg-track" cx="120" cy="120" r="100"/>' +
+      '<circle class="rg-fill" cx="120" cy="120" r="100" pathLength="100" transform="rotate(-90 120 120)" style="--off:' + (100 - pct) + '"/></svg>';
+  }
+  function orderCard() {
+    var t = todayStr();
+    var n = Math.floor(utc(t) / 86400000);
+    var doy = Math.floor((utc(t) - Date.UTC(+t.slice(0, 4), 0, 0)) / 86400000);
+    return '<section class="order"><div class="o-head"><span class="label">Ordem do dia</span><span class="label">Nº ' + doy + '</span></div>' +
+      '<p class="o-text">' + esc(DAILY[n % DAILY.length]) + '</p></section>';
+  }
+
+  var commitNote = "";
+  function dayPhrase() { return DAILY[Math.floor(utc(todayStr()) / 86400000) % DAILY.length]; }
+  function commitCard(d) {
+    var g = state.goal | 0, h = '<section class="card"><h2>Compromisso</h2>';
+    if (g > 0) {
+      if (d >= g) h += '<p class="lead"><strong>Meta de ' + g + ' dias cumprida.</strong> Defina uma nova abaixo.</p>';
+      else {
+        var rem = g - d, dt = addDays(todayStr(), -rem);
+        h += '<p class="lead">Faltam <strong>' + rem + (rem === 1 ? ' dia' : ' dias') + '</strong> para a meta de ' + g + ' dias, em ' + dt.slice(8) + '/' + dt.slice(5, 7) + '/' + dt.slice(0, 4) + '.</p>' +
+          '<div class="bar" style="margin:-4px 0 16px"><span style="width:' + Math.round(d / g * 100) + '%"></span></div>';
+      }
+    } else h += '<p class="lead">Defina uma meta em dias e escreva por que você começou. O motivo aparece quando a vontade bater.</p>';
+    h += '<div class="field"><label for="meta-in">Minha meta (dias)</label><input id="meta-in" type="number" inputmode="numeric" min="1" max="3650" value="' + (g > 0 ? g : '') + '" placeholder="Ex.: 90"></div>' +
+      '<div class="field"><label for="motivo-in">Meu motivo</label><textarea id="motivo-in" maxlength="160" placeholder="Por que você começou?">' + esc(state.why || "") + '</textarea></div>' +
+      '<p class="status" id="commit-msg">' + esc(commitNote) + '</p><div class="actions"><button data-act="commit-save">Salvar compromisso</button></div></section>';
+    return h;
+  }
+  function weekCard() {
+    var t = todayStr(), clean = 0, rel = 0, notes = 0, i, total = 0, peakH = 0, peakN = -1;
+    for (i = 0; i < 7; i++) {
+      var ds = addDays(t, i);
+      if (state.relapses.some(function (r) { return r.d === ds; })) rel++;
+      else if (state.origin && ds >= state.origin) clean++;
+      if (state.notes[ds]) notes++;
+    }
+    for (i = 0; i < 24; i++) { total += state.urgeHours[i]; if (state.urgeHours[i] > peakN) { peakN = state.urgeHours[i]; peakH = i; } }
+    var msg = clean === 7 ? "Semana perfeita. Nenhuma recaída." : (rel ? "Houve recaída nesta semana. Veja o gatilho e ajuste o plano." : "Semana em andamento. Mantenha o ritmo.");
+    return '<section class="card"><h2>Resumo da semana</h2><p class="lead">' + msg + '</p><div class="stats two">' +
+      '<div class="stat"><span class="label">Dias limpos</span><b>' + clean + '/7</b></div>' +
+      '<div class="stat"><span class="label">Recaídas</span><b>' + rel + '</b></div>' +
+      '<div class="stat"><span class="label">Vontades vencidas</span><b>' + state.week.urges + '</b></div>' +
+      '<div class="stat"><span class="label">Horário mais difícil</span><b>' + (total >= 3 ? peakH + 'h' : '–') + '</b></div>' +
+      '</div></section>';
+  }
+
+  function ladder(cur) {
+    var h = '<section class="card"><h2>Patentes</h2><ol class="ladder">';
+    for (var i = RANKS.length - 1; i >= 0; i--) {
+      var cls = cur < 0 ? "lock" : (i < cur ? "done" : (i === cur ? "now" : "lock"));
+      var tag = cls === "done" ? "Conquistada" : (cls === "now" ? "Atual" : "Bloqueada");
+      h += '<li class="' + cls + '"><span class="d">Dia ' + RANKS[i][0] + '</span><span class="n">' + RANKS[i][1] + '</span><span class="s">' + tag + '</span></li>';
+    }
+    return h + "</ol></section>";
+  }
+
+  function medals(best) {
+    var h = '<section class="card"><h2>Medalhas</h2><p class="lead">Marcos da sua melhor sequência.</p><div class="medals">';
+    for (var i = 0; i < MEDALS.length; i++) {
+      var got = best >= MEDALS[i][0];
+      h += '<div class="medal ' + (got ? "got" : "off") + '"><b>' + MEDALS[i][0] + '</b><span>' + (MEDALS[i][0] === 1 ? "dia" : "dias") + ' · ' + MEDALS[i][1] + '</span><em>' + (got ? "Conquistada" : "Bloqueada") + '</em></div>';
+    }
+    return h + "</div></section>";
+  }
+
+  function viewHoje(d, idx, best) {
+    var last = idx === RANKS.length - 1;
+    var from = RANKS[idx][0];
+    var to = last ? 365 : RANKS[idx + 1][0];
+    var pct = last ? 100 : Math.round(((d - from) / (to - from)) * 100);
+    var msg = last
+      ? '<p><strong>Patente máxima.</strong> Dia ' + d + '. Mantenha a posição.</p>'
+      : '<p>Faltam <strong>' + (to - d) + (to - d === 1 ? ' dia' : ' dias') + '</strong> para ' + RANKS[idx + 1][1] + ' (dia ' + to + ').</p>';
+    var today = todayStr();
+    if (noteDraft === null) noteDraft = state.notes[today] || "";
+
+    var action;
+    if (confirming) {
+      var chips = "";
+      for (var i = 0; i < TRIGGERS.length; i++) {
+        chips += '<button data-trig="' + TRIGGERS[i] + '" aria-pressed="' + (pendingTrig === TRIGGERS[i]) + '">' + TRIGGERS[i] + '</button>';
+      }
+      action = '<section class="card confirm"><p><strong>Reiniciar para o dia 0?</strong> Você volta a Recruta. Sua melhor sequência, ' + best + (best === 1 ? ' dia' : ' dias') + ', continua registrada.</p>' +
+        '<p class="label">O que levou a isso? (opcional)</p><div class="chips">' + chips + '</div>' +
+        '<div class="row"><button data-act="cancel">Cancelar</button><button class="danger" data-act="reset">Confirmar recaída</button></div></section>';
+    } else {
+      action = '<div class="actions"><button class="urge" data-act="urge">Bateu a vontade</button><button class="danger" data-act="ask">Registrar recaída</button></div>';
+    }
+
+    return '<section class="card rank hero"><div class="ringwrap">' + ring(pct) +
+        '<div class="ring-in"><span class="label">Dias sem recaída</span><div class="days">' + d + '</div></div></div>' +
+        insignia(idx) +
+        '<div class="rankname">' + RANKS[idx][1] + '</div>' +
+        '<div class="progress">' + msg + '</div>' +
+      '</section>' +
+      orderCard() +
+      action +
+      '<p class="status">' + esc(message) + '</p>' +
+      '<section class="card"><h2>Anotação de hoje</h2><div class="field"><label for="nota-hoje">Como foi o dia? Algum gatilho, algo que ajudou?</label>' +
+        '<textarea id="nota-hoje" maxlength="280"></textarea></div>' +
+        '<div class="actions"><button data-act="note">Salvar anotação</button></div></section>' +
+      '<section class="card"><div class="stats">' +
+        '<div class="stat"><span class="label">Melhor sequência</span><b>' + best + '</b></div>' +
+        '<div class="stat"><span class="label">Recomeços</span><b>' + state.attempts + '</b></div>' +
+        '<div class="stat"><span class="label">Vontades vencidas</span><b>' + state.urges + '</b></div>' +
+      '</div></section>' +
+      commitCard(d) + '<div class="actions"><button class="primary" data-act="share">Compartilhar cartão da patente</button>' +
+      (fsOk ? '<button data-act="fs">Tela cheia</button>' : '') + '</div>' +
+      '<details class="card bk"><summary>Backup dos dados</summary><div class="in"><p class="lead">Guarde o código em um lugar seguro, como suas mensagens. Para restaurar, cole o código na caixa e toque em Restaurar.</p>' +
+      '<div class="field"><label for="backup-code">Código de backup</label><textarea id="backup-code" spellcheck="false" autocomplete="off"></textarea></div>' +
+      '<div class="row"><button data-act="bk-make">Gerar código</button><button data-act="bk-restore">Restaurar</button></div></div></details>' + pinCard();
+  }
+
+  function viewDiario(d) {
+    var today = todayStr();
+    var first = addDays(today, 29);
+    var offset = new Date(utc(first)).getUTCDay();
+    var names = ["D", "S", "T", "Q", "Q", "S", "S"];
+    var h = weekCard() + '<section class="card"><h2>Últimos 30 dias</h2><div class="cal-head">';
+    for (var n = 0; n < 7; n++) h += '<span>' + names[n] + '</span>';
+    h += '</div><div class="cal" style="margin-top:4px">';
+    for (var b = 0; b < offset; b++) h += '<div class="cell blank"></div>';
+    for (var i = 29; i >= 0; i--) {
+      var ds = addDays(today, i);
+      var rel = state.relapses.some(function (r) { return r.d === ds; });
+      var cls = "cell";
+      var txt = String(+ds.slice(8));
+      if (rel) { cls += " relapse"; txt = "×"; }
+      else if (state.origin && ds >= state.origin) cls += " clean";
+      if (ds === today) cls += " today";
+      if (state.notes[ds]) cls += " hasnote";
+      h += '<div class="' + cls + '" title="' + fmt(ds) + '">' + txt + '</div>';
+    }
+    h += '</div><p class="legend"><span><i class="c"></i>Dia limpo</span><span><i class="r"></i>Recaída</span><span>• Anotação</span></p></section>';
+
+    var counts = {};
+    state.relapses.forEach(function (r) { var k = r.t || "Sem registro"; counts[k] = (counts[k] || 0) + 1; });
+    var keys = Object.keys(counts).sort(function (a, c) { return counts[c] - counts[a]; });
+    h += '<section class="card"><h2>Gatilhos</h2>';
+    if (!keys.length) {
+      h += '<p class="empty">Nenhuma recaída registrada. Quando houver, os gatilhos aparecem aqui.</p>';
+    } else {
+      var max = counts[keys[0]];
+      h += '<ul class="trig">';
+      keys.forEach(function (k) {
+        h += '<li><span>' + esc(k) + '</span><span class="tb"><span style="width:' + Math.round(counts[k] / max * 100) + '%"></span></span><b>' + counts[k] + '</b></li>';
+      });
+      h += '</ul>';
+    }
+    h += '</section>';
+
+    h += urgeCard() + streakCard(d);
+    var dates = Object.keys(state.notes).filter(function (k) { return state.notes[k]; }).sort().reverse().slice(0, 14);
+    h += '<section class="card"><h2>Anotações</h2>';
+    if (!dates.length) {
+      h += '<p class="empty">Suas anotações diárias aparecem aqui.</p>';
+    } else {
+      h += '<ul class="notes">';
+      dates.forEach(function (k) { h += '<li><time>' + fmt(k) + '</time><p>' + esc(state.notes[k]) + '</p></li>'; });
+      h += '</ul>';
+    }
+    return h + '</section>';
+  }
+
+  function render() {
+    updateDate();
+    var ta = document.getElementById("nota-hoje");
+    if (ta) noteDraft = ta.value;
+    if (!state.start) {
+      tabsEl.hidden = true;
+      app.innerHTML =
+        '<section class="card">' +
+          '<h2>Alistamento</h2>' +
+          '<p class="lead">Você começa como Recruta no dia 0. A cada dia sem recaída, sobe na hierarquia até Coronel, no dia 365.</p>' +
+          '<div class="field"><label for="dias-anteriores">Quantos dias você já está sem?</label>' +
+          '<input id="dias-anteriores" type="number" inputmode="numeric" min="0" max="3650" value="0"></div>' +
+          '<div class="actions"><button class="primary" data-act="start">Iniciar contagem</button></div>' +
+        '</section>' + ladder(-1);
+      return;
+    }
+    tabsEl.hidden = false;
+    Array.prototype.forEach.call(tabsEl.querySelectorAll("button"), function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-tab") === tab));
+    });
+    var d = daysSince(state.start);
+    lastD = d;
+    trackOpen();
+    var idx = rankIndex(d);
+    var best = Math.max(state.best, d);
+    if (tab === "hoje") app.innerHTML = viewHoje(d, idx, best);
+    else if (tab === "diario") app.innerHTML = viewDiario(d);
+    else app.innerHTML = ladder(idx) + medals(best) + challengesCard() + boardCard();
+    var t2 = document.getElementById("nota-hoje");
+    if (t2) t2.value = noteDraft || "";
+    clearTimeout(msgT);
+    if (message) msgT = setTimeout(function () { message = ""; var st = app.querySelector(".status"); if (st) st.textContent = ""; }, 6000);
+    checkPromotion(idx);
+  }
+
+  function showOv(html) {
+    ov.innerHTML = '<div class="ov-in">' + html + '</div>';
+    ov.hidden = false;
+    var f = ov.querySelector("button");
+    if (f) f.focus();
+  }
+  function hideOv() {
+    ov.hidden = true; ov.innerHTML = "";
+    if (urgeTimer) { clearInterval(urgeTimer); urgeTimer = null; }
+  }
+
+  function checkPromotion(idx) {
+    if (!ov.hidden || !state.start) return;
+    if (idx > state.seen) {
+      showOv(
+        '<span class="label">Ordem do dia</span>' +
+        '<h2>Promovido!</h2>' + insignia(idx) +
+        '<div class="rankname">' + RANKS[idx][1] + '</div>' +
+        '<p class="quote">“' + PROMO[idx] + '”</p>' +
+        '<p>Dia ' + RANKS[idx][0] + ' alcançado. ' + (idx === RANKS.length - 1 ? 'Você chegou ao topo da hierarquia.' : 'Próxima patente: ' + RANKS[idx + 1][1] + ' no dia ' + RANKS[idx + 1][0] + '.') + '</p>' +
+        '<div class="actions"><button class="primary" data-act="promo-ok">Continuar</button></div>'
+      );
+    }
+  }
+
+  function startUrge() {
+    var idx = rankIndex(daysSince(state.start));
+    urgeStart = Date.now();
+    state.urgeHours[new Date().getHours()] += 1; save();
+    var todo = "";
+    for (var i = 0; i < TASKS.length; i++) {
+      todo += '<li><label><input type="checkbox"> ' + TASKS[i] + '</label></li>';
+    }
+    showOv(
+      '<span class="label">Modo vontade</span>' +
+      '<h2>Respire. Isso passa.</h2>' +
+      '<div class="breath"><div class="circle"></div><span id="breath-txt">Inspire</span></div>' +
+      '<div class="timer" id="urge-time">10:00</div>' +
+      (state.why ? '<p class="label">Seu motivo</p><p class="quote">“' + esc(state.why) + '”</p>' : '') +
+      '<p>Um ' + RANKS[idx][1] + ' não abandona o posto. A vontade costuma perder força em poucos minutos.</p>' +
+      '<ul class="todo">' + todo + '</ul>' +
+      '<div class="row"><button data-act="urge-close">Fechar</button><button class="primary" id="urge-win" data-act="urge-win" disabled>Resisti</button></div>' +
+      '<p class="note" id="urge-hint">O botão Resisti libera quando o tempo acabar.</p>'
+    );
+    if (urgeTimer) clearInterval(urgeTimer);
+    urgeTimer = setInterval(tickUrge, 1000);
+    tickUrge();
+  }
+  function tickUrge() {
+    var t = Math.floor((Date.now() - urgeStart) / 1000);
+    var remain = Math.max(0, URGE_SECONDS - t);
+    var tm = document.getElementById("urge-time");
+    if (!tm) { clearInterval(urgeTimer); urgeTimer = null; return; }
+    tm.textContent = pad(Math.floor(remain / 60)) + ":" + pad(remain % 60);
+    var ph = t % 12;
+    document.getElementById("breath-txt").textContent = ph < 4 ? "Inspire" : (ph < 6 ? "Segure" : "Solte");
+    if (remain === 0) {
+      document.getElementById("urge-win").disabled = false;
+      document.getElementById("urge-hint").textContent = "Tempo concluído. Se a vontade passou, registre a vitória.";
+      clearInterval(urgeTimer); urgeTimer = null;
+    }
+  }
+
+  function readLocal() {
+    try { var v = localStorage.getItem(LS_KEY) || localStorage.getItem("quartel-v2") || localStorage.getItem("quartel-v1"); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+  }
+  function writeLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  var saving = Promise.resolve();
+  function save() {
+    writeLocal();
+    pushBoard();
+    if (!docRef) return;
+    var snapshot = JSON.parse(JSON.stringify(state));
+    saving = saving.then(function () { return docRef.set(snapshot); }).catch(function () {
+      noteEl.textContent = "Não foi possível salvar na sua conta agora. A contagem fica salva neste navegador.";
+    });
+  }
+  function normalize(o) {
+    if (!o || typeof o.start !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(o.start)) return null;
+    var rel = Array.isArray(o.relapses) ? o.relapses.filter(function (r) { return r && typeof r.d === "string"; }) : [];
+    var notes = o.notes && typeof o.notes === "object" ? o.notes : {};
+    var seen = typeof o.seen === "number" ? o.seen : rankIndex(daysSince(o.start));
+    return {
+      origin: typeof o.origin === "string" ? o.origin : o.start,
+      start: o.start, best: Math.max(0, +o.best || 0), attempts: Math.max(0, +o.attempts || 0),
+      relapses: rel, notes: notes, urges: Math.max(0, +o.urges || 0), seen: seen,
+      name: typeof o.name === "string" ? o.name.slice(0, 24) : "",
+      urgeHours: Array.isArray(o.urgeHours) && o.urgeHours.length === 24 ? o.urgeHours.map(function (n) { return Math.max(0, +n || 0); }) : zeros24(),
+      streaks: Array.isArray(o.streaks) ? o.streaks.map(Number).filter(function (n) { return n >= 0; }).slice(-40) : [],
+      week: o.week && typeof o.week.k === "string" ? {
+        k: o.week.k, urges: Math.max(0, +o.week.urges || 0),
+        noteDays: Array.isArray(o.week.noteDays) ? o.week.noteDays.filter(function (x) { return typeof x === "string"; }) : [],
+        openDays: Array.isArray(o.week.openDays) ? o.week.openDays.filter(function (x) { return typeof x === "string"; }) : [],
+        done: o.week.done && typeof o.week.done === "object" ? o.week.done : {}
+      } : { k: "", urges: 0, noteDays: [], openDays: [], done: {} },
+      chDone: Math.max(0, +o.chDone || 0),
+      goal: Math.min(3650, Math.max(0, parseInt(o.goal, 10) || 0)),
+      why: typeof o.why === "string" ? o.why.slice(0, 160) : "",
+      board: !!o.board
+    };
+  }
+
+  /* Share card: drawn on a canvas in the dark palette so it looks the same everywhere. */
+  var shareCanvas = null, shareTimer = null, saveTimer = null;
+  async function drawCard() {
+    var d = daysSince(state.start), idx = rankIndex(d);
+    try {
+      await document.fonts.load('800 200px "Big Shoulders Stencil Display"');
+      await document.fonts.load('500 40px "IBM Plex Mono"');
+    } catch (e) {}
+    var c = document.createElement("canvas"); c.width = 1080; c.height = 1560;
+    var x = c.getContext("2d");
+    var BG = "#12160F", FG = "#E8E6D4", MU = "#9BA08A", BR = "#D8AE45", AC = "#A3BC5C", LN = "#2E3626";
+    var DISP = '"Big Shoulders Stencil Display", Impact, sans-serif', MONO = '"IBM Plex Mono", monospace';
+    x.fillStyle = BG; x.fillRect(0, 0, 1080, 1560);
+    x.strokeStyle = LN; x.lineWidth = 4; x.strokeRect(40, 40, 1000, 1480);
+    x.textAlign = "center";
+    x.fillStyle = FG; x.font = "800 72px " + DISP; x.fillText("OPERAÇÃO 365", 540, 150);
+    if (state.name) { x.fillStyle = MU; x.font = "500 40px " + MONO; x.fillText(state.name.toUpperCase(), 540, 212); }
+    x.fillStyle = BR;
+    var cy = 360;
+    if (idx === 0) {
+      x.setLineDash([12, 18]); x.lineWidth = 9; x.beginPath(); x.arc(540, cy, 66, 0, Math.PI * 2); x.strokeStyle = BR; x.stroke(); x.setLineDash([]);
+    } else if (idx <= 6) {
+      x.strokeStyle = BR; x.lineWidth = 15; x.lineCap = "butt"; x.lineJoin = "miter";
+      var gap = 34, y0 = cy - ((idx - 1) * gap) / 2 - 20;
+      for (var i = 0; i < idx; i++) {
+        var y = y0 + i * gap;
+        x.beginPath(); x.moveTo(440, y + 40); x.lineTo(540, y); x.lineTo(640, y + 40); x.stroke();
+      }
+    } else {
+      var n = idx - 6, w = 76, x0 = 540 - (n * w) / 2 + w / 2;
+      for (var j = 0; j < n; j++) {
+        var cx = x0 + j * w; x.beginPath();
+        for (var k = 0; k < 10; k++) {
+          var a = -Math.PI / 2 + k * Math.PI / 5, rad = k % 2 === 0 ? 32 : 13;
+          var px = cx + rad * Math.cos(a), py = cy + rad * Math.sin(a);
+          if (k === 0) x.moveTo(px, py); else x.lineTo(px, py);
+        }
+        x.closePath(); x.fill();
+      }
+    }
+    x.fillStyle = MU; x.font = "500 34px " + MONO; x.fillText("DIAS SEM RECAÍDA", 540, 540);
+    x.fillStyle = FG; x.font = "800 480px " + DISP; x.fillText(String(d), 540, 950);
+    x.fillStyle = BR; x.font = "800 130px " + DISP; x.fillText(RANKS[idx][1].toUpperCase(), 540, 1100);
+    x.fillStyle = FG; x.font = "800 46px " + DISP;
+    var words = dayPhrase().toUpperCase().split(" "), line = "", lines = [];
+    words.forEach(function (w) {
+      var test = line ? line + " " + w : w;
+      if (x.measureText(test).width > 860 && line) { lines.push(line); line = w; } else line = test;
+    });
+    if (line) lines.push(line);
+    lines.slice(0, 3).forEach(function (ln, li) { x.fillText(ln, 540, 1218 + li * 54); });
+    var last = idx === RANKS.length - 1, from = RANKS[idx][0], to = last ? 365 : RANKS[idx + 1][0];
+    var pct = last ? 1 : (d - from) / (to - from);
+    x.strokeStyle = LN; x.lineWidth = 4; x.strokeRect(140, 1380, 800, 28);
+    x.fillStyle = AC; x.fillRect(142, 1382, Math.max(0, 796 * pct), 24);
+    x.fillStyle = MU; x.font = "500 32px " + MONO;
+    x.fillText(last ? "PATENTE MÁXIMA" : "PRÓXIMA: " + RANKS[idx + 1][1].toUpperCase() + " · DIA " + to, 540, 1458);
+    x.fillStyle = MU; x.font = "500 26px " + MONO; x.fillText("BY NOVAXS", 540, 1500);
+    return c;
+  }
+  function cardText() {
+    var d = daysSince(state.start), idx = rankIndex(d);
+    return (state.name ? state.name + ": " : "") + RANKS[idx][1] + " na Operação 365, " + d + (d === 1 ? " dia" : " dias") + " sem recaída.";
+  }
+  async function refreshCard() {
+    shareCanvas = await drawCard();
+    var img = document.getElementById("share-img");
+    if (img) img.src = shareCanvas.toDataURL("image/png");
+    var dk = document.getElementById("dl-link");
+    if (dk) dk.href = shareCanvas.toDataURL("image/png");
+    var a = document.getElementById("wa-link");
+    if (a) a.href = "https://wa.me/?text=" + encodeURIComponent(cardText());
+  }
+  function openShare() {
+    showOv(
+      '<span class="label">Cartão da patente</span>' +
+      '<img class="sharecard" id="share-img" alt="Cartão com seus dias sem recaída e sua patente" width="270" height="390">' +
+      '<div class="field" style="width:100%;text-align:left;margin:0"><label for="apelido">Seu nome ou apelido no cartão (opcional)</label>' +
+      '<input id="apelido" type="text" maxlength="24" value="' + esc(state.name || "") + '" style="font-family:var(--font-body);font-size:16px"></div>' +
+      '<div class="actions"><button class="primary" data-act="share-send">Compartilhar imagem</button>' +
+      '<a class="btn" id="dl-link" download="operacao-365-patente.png" href="#">Baixar imagem</a>' +
+      '<a class="btn" id="wa-link" href="https://wa.me/?text=' + encodeURIComponent(cardText()) + '" target="_blank" rel="noopener">Enviar só o texto no WhatsApp</a>' +
+      '<button data-act="urge-close">Fechar</button></div>' +
+      '<p class="note" id="share-hint">Se o botão não abrir o WhatsApp, segure o dedo sobre a imagem, salve e envie pela galeria.</p>'
+    );
+    refreshCard();
+  }
+  async function sendCard() {
+    var hint = document.getElementById("share-hint");
+    if (!shareCanvas) await refreshCard();
+    var blob = await new Promise(function (res) { shareCanvas.toBlob(res, "image/png"); });
+    try {
+      var file = new File([blob], "operacao-365-patente.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: cardText() });
+        return;
+      }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    if (dl) {
+      try {
+        await dl.save({ filename: "operacao-365-patente.png", data: blob });
+        if (hint) hint.textContent = "Cartão salvo. Abra a galeria e envie pelo WhatsApp.";
+        return;
+      } catch (e) { if (e && e.code === "declined") return; }
+    }
+    if (hint) hint.textContent = "Segure o dedo sobre a imagem, escolha Salvar ou Compartilhar e envie pelo WhatsApp.";
+  }
+
+  var PROMO = [
+    "Todo comandante já foi recruta.",
+    "Primeira semana vencida. O treino começou.",
+    "Cabo: agora você manda no seu hábito.",
+    "Três semanas. A rotina está do seu lado.",
+    "Um mês de disciplina. Poucos chegam aqui.",
+    "Quarenta e cinco dias. Sua mente está ficando mais clara.",
+    "Dois meses de posto firme.",
+    "Aspirante: você já provou que dá conta.",
+    "Quatro meses. Você lidera pelo exemplo.",
+    "Cinco meses sem recuar.",
+    "Capitão: o grupo olha para você.",
+    "Major: a disciplina virou identidade.",
+    "Falta pouco. Mantenha o passo.",
+    "Coronel. Um ano de comando sobre si mesmo."
+  ];
+  var CHALLENGES = [
+    { id: "u", txt: "Vença 3 vontades", goal: 3, get: function (w) { return w.urges; } },
+    { id: "n", txt: "Anote em 3 dias", goal: 3, get: function (w) { return w.noteDays.length; } },
+    { id: "o", txt: "Abra o app em 5 dias", goal: 5, get: function (w) { return w.openDays.length; } }
+  ];
+  var CH_MEDALS = [[1, "Primeiro desafio"], [5, "5 desafios"], [10, "10 desafios"], [25, "25 desafios"]];
+  var dbh = null, boardUid = null, boardRows = [], pinOpen = false, pinNote = "";
+  function zeros24() { var a = []; for (var i = 0; i < 24; i++) a.push(0); return a; }
+  function defaults() {
+    return { origin: null, start: null, best: 0, attempts: 0, relapses: [], notes: {}, urges: 0, seen: 0, name: "",
+      goal: 0, why: "", urgeHours: zeros24(), streaks: [], week: { k: "", urges: 0, noteDays: [], openDays: [], done: {} }, chDone: 0, board: false };
+  }
+  function weekKey() {
+    var t = todayStr(), dow = new Date(utc(t)).getUTCDay();
+    return addDays(t, (dow + 6) % 7);
+  }
+  function ensureWeek() {
+    var k = weekKey();
+    if (state.week.k !== k) { state.week = { k: k, urges: 0, noteDays: [], openDays: [], done: {} }; return true; }
+    return false;
+  }
+  function checkChallenges() {
+    ensureWeek();
+    var names = [];
+    CHALLENGES.forEach(function (c) {
+      if (!state.week.done[c.id] && c.get(state.week) >= c.goal) {
+        state.week.done[c.id] = true; state.chDone += 1; names.push(c.txt);
+      }
+    });
+    if (names.length) { setStatus("Desafio cumprido: " + names.join(", ") + "."); return true; }
+    return false;
+  }
+  function trackOpen() {
+    var changed = ensureWeek();
+    var t = todayStr();
+    if (state.week.openDays.indexOf(t) < 0) { state.week.openDays.push(t); changed = true; }
+    if (checkChallenges()) changed = true;
+    if (changed) save();
+  }
+
+  function urgeCard() {
+    var P = [["Madrugada", "0h às 5h", 0, 6], ["Manhã", "6h às 11h", 6, 12], ["Tarde", "12h às 17h", 12, 18], ["Noite", "18h às 23h", 18, 24]];
+    var total = 0, peakH = 0, peakN = -1, i;
+    for (i = 0; i < 24; i++) { total += state.urgeHours[i]; if (state.urgeHours[i] > peakN) { peakN = state.urgeHours[i]; peakH = i; } }
+    var h = '<section class="card"><h2>Quando a vontade bate</h2>';
+    if (total < 3) return h + '<p class="empty">Cada vez que você abre o modo vontade, o horário é registrado. Com 3 registros o padrão aparece aqui.</p></section>';
+    var sums = P.map(function (p) { var n = 0; for (var k = p[2]; k < p[3]; k++) n += state.urgeHours[k]; return n; });
+    var max = Math.max.apply(null, sums);
+    h += '<p class="lead">Pico por volta das ' + peakH + 'h. Prepare uma distração para esse horário.</p><ul class="trig">';
+    P.forEach(function (p, j) {
+      h += '<li><span>' + p[0] + '</span><span class="tb"><span style="width:' + (max ? Math.round(sums[j] / max * 100) : 0) + '%"></span></span><b>' + sums[j] + '</b></li>';
+    });
+    return h + '</ul></section>';
+  }
+
+  function streakCard(d) {
+    var past = state.streaks.slice(-11), list = past.concat([d]);
+    var n = list.length, max = Math.max.apply(null, list.concat([1]));
+    var W = 360, H = 170, L = 10, R = 10, T = 22, B = 26, slot = (W - L - R) / n, bw = Math.min(34, slot * 0.68);
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Gráfico das suas sequências, em dias. A atual tem ' + d + ' dias.">';
+    svg += '<line class="ch-ax" x1="' + L + '" y1="' + (H - B) + '" x2="' + (W - R) + '" y2="' + (H - B) + '"/>';
+    list.forEach(function (v, i) {
+      var cur = i === n - 1;
+      var bh = Math.max(2, (v / max) * (H - T - B));
+      var x = L + i * slot + (slot - bw) / 2, y = H - B - bh;
+      svg += '<rect class="' + (cur ? "ch-cur" : "ch-past") + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '"/>';
+      svg += '<text class="ch-v" x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 5).toFixed(1) + '" text-anchor="middle">' + v + '</text>';
+      svg += '<text class="ch-l" x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 9) + '" text-anchor="middle">' + (cur ? "atual" : "#" + (state.streaks.length - past.length + i + 1)) + '</text>';
+    });
+    svg += '</svg>';
+    return '<section class="card"><h2>Suas sequências</h2><p class="lead">Dias seguidos em cada tentativa. A barra dourada é a atual.</p>' + svg +
+      (past.length ? '' : '<p class="note">As sequências anteriores aparecem depois do primeiro recomeço.</p>') + '</section>';
+  }
+
+  function challengesCard() {
+    var h = '<section class="card"><h2>Desafios da semana</h2><p class="lead">Renovam toda segunda-feira.</p><ul class="chl">';
+    CHALLENGES.forEach(function (c) {
+      var v = Math.min(c.goal, c.get(state.week)), done = !!state.week.done[c.id];
+      h += '<li class="' + (done ? "done" : "") + '"><div class="t"><span>' + c.txt + (done ? " ✓" : "") + '</span><b>' + v + '/' + c.goal + '</b></div>' +
+        '<div class="bar"><span style="width:' + Math.round(v / c.goal * 100) + '%"></span></div></li>';
+    });
+    h += '</ul><p class="label" style="margin:18px 0 10px">Desafios cumpridos: ' + state.chDone + '</p><div class="medals">';
+    CH_MEDALS.forEach(function (m) {
+      var got = state.chDone >= m[0];
+      h += '<div class="medal ' + (got ? "got" : "off") + '"><b>' + m[0] + '</b><span>' + m[1] + '</span><em>' + (got ? "Conquistada" : "Bloqueada") + '</em></div>';
+    });
+    return h + '</div></section>';
+  }
+
+  /* Quadro de honra: só aparece quando o app está publicado com banco de dados. */
+  function boardList() {
+    if (!boardRows.length) return '<p class="empty">Ninguém no quadro ainda.</p>';
+    var t = todayStr();
+    var rows = boardRows.map(function (r) {
+      var ok = typeof r.asOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.asOf);
+      var eff = (+r.d || 0) + (ok ? Math.max(0, Math.round((utc(t) - utc(r.asOf)) / 86400000)) : 0);
+      return { id: r.id, name: String(r.name || "Anônimo").slice(0, 24), d: eff };
+    }).sort(function (a, b) { return b.d - a.d; });
+    var h = '<ol class="bl">';
+    rows.forEach(function (r, i) {
+      h += '<li' + (r.id === boardUid ? ' class="me"' : '') + '><span class="p">' + (i + 1) + '</span><span class="n">' + esc(r.name) + '<small>' + RANKS[rankIndex(r.d)][1] + '</small></span><b>' + r.d + (r.d === 1 ? ' dia' : ' dias') + '</b></li>';
+    });
+    return h + '</ol>';
+  }
+  function boardCard() {
+    if (!dbh) return '';
+    var h = '<section class="card"><h2>Quadro de honra</h2>';
+    if (!state.board) {
+      h += '<p class="lead">Mostre sua patente e seus dias para os amigos que usam este link. Aparecem só seu apelido, sua patente e seus dias. Você sai quando quiser.</p>' +
+        '<div class="field"><label for="board-name">Seu apelido</label><input id="board-name" type="text" maxlength="24" value="' + esc(state.name || "") + '" style="font-family:var(--font-body);font-size:16px"></div>' +
+        '<p class="status" id="board-err"></p><div class="actions"><button class="primary" data-act="board-join">Entrar no quadro</button></div>';
+    } else {
+      h += '<div id="board-list">' + boardList() + '</div><div class="actions" style="margin-top:14px"><button data-act="board-leave">Sair do quadro</button></div>';
+    }
+    return h + '</section>';
+  }
+  function paintBoard() { var el = document.getElementById("board-list"); if (el) el.innerHTML = boardList(); }
+  var boardSaving = Promise.resolve();
+  function pushBoard() {
+    if (!dbh || !boardUid || !state.board || !state.start) return;
+    var ref = dbh.collection("board").doc(boardUid), d = daysSince(state.start);
+    var data = { name: (state.name || "Anônimo").slice(0, 24), d: d, asOf: todayStr(), idx: rankIndex(d) };
+    boardSaving = boardSaving.then(function () { return ref.set(data); }).catch(function () {});
+  }
+  function subscribeBoard() {
+    try {
+      dbh.collection("board").onSnapshot(function (snap) {
+        boardRows = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+        paintBoard();
+      }, function () {});
+    } catch (e) {}
+  }
+
+  /* Trava com PIN: privacidade simples, guardada só neste aparelho. */
+  var PIN_KEY = "op365-pin", fails = 0, lockedUntil = 0, hiddenAt = 0;
+  var lockEl = document.getElementById("lock");
+  function hp(str) {
+    var h = 2166136261, t = "op365|" + str + "|novaxs";
+    for (var r = 0; r < 2000; r++) {
+      for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      t = h.toString(36) + str;
+    }
+    return h.toString(36);
+  }
+  function getPin() { try { var v = JSON.parse(localStorage.getItem(PIN_KEY)); return v && v.h ? v : null; } catch (e) { return null; } }
+  function setPinStore(v) { try { if (v) localStorage.setItem(PIN_KEY, JSON.stringify(v)); else localStorage.removeItem(PIN_KEY); } catch (e) {} }
+  /* Biometria: usa o desbloqueio do aparelho (digital ou rosto) como atalho do PIN. */
+  var BIO_KEY = "op365-bio", bioOk = false;
+  function b64u(buf) {
+    var a = new Uint8Array(buf), s = "";
+    for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function unb64u(str) {
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    var b = atob(str), a = new Uint8Array(b.length);
+    for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+    return a;
+  }
+  function rnd(n) { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+  function getBio() { try { var v = JSON.parse(localStorage.getItem(BIO_KEY)); return v && v.id ? v : null; } catch (e) { return null; } }
+  function setBio(v) { try { if (v) localStorage.setItem(BIO_KEY, JSON.stringify(v)); else localStorage.removeItem(BIO_KEY); } catch (e) {} }
+  async function checkBio() {
+    try {
+      bioOk = !!(window.PublicKeyCredential && window.isSecureContext && navigator.credentials &&
+        await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+    } catch (e) { bioOk = false; }
+  }
+  async function bioEnable() {
+    var cred = await navigator.credentials.create({ publicKey: {
+      challenge: rnd(32),
+      rp: { name: "Operação 365" },
+      user: { id: rnd(16), name: "operacao365", displayName: "Operação 365" },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
+      timeout: 60000
+    } });
+    if (!cred) throw new Error("sem credencial");
+    setBio({ id: b64u(cred.rawId) });
+  }
+  async function bioUnlock(auto) {
+    var b = getBio();
+    if (!b || !getPin()) return;
+    try {
+      await navigator.credentials.get({ publicKey: {
+        challenge: rnd(32),
+        allowCredentials: [{ type: "public-key", id: unb64u(b.id), transports: ["internal"] }],
+        userVerification: "required", timeout: 60000
+      } });
+      fails = 0;
+      var i = document.getElementById("pin-in"); if (i) i.value = "";
+      document.getElementById("pin-err").textContent = "";
+      lockEl.hidden = true;
+    } catch (e) {
+      if (!auto) document.getElementById("pin-err").textContent = "Biometria não reconhecida. Use o PIN.";
+    }
+  }
+  function bioRefresh(auto) {
+    var bb = document.getElementById("bio-btn");
+    if (!bb) return;
+    var on = bioOk && !!getBio() && !!getPin();
+    bb.hidden = !on;
+    if (on && auto && !lockEl.hidden) bioUnlock(true);
+  }
+  function bioRow() {
+    if (!bioOk) return '<p class="note" style="margin-top:12px">Biometria indisponível neste navegador ou neste modo de abertura do arquivo. O PIN continua funcionando.</p>';
+    return getBio()
+      ? '<p class="lead" style="margin:14px 0 10px">Biometria ativa. Se ela falhar, use o PIN.</p><button data-act="bio-off" style="width:100%">Desativar biometria</button>'
+      : '<button data-act="bio-on" style="width:100%;margin-top:10px">Ativar biometria</button>';
+  }
+  function showLock() {
+    if (!getPin()) return;
+    lockEl.hidden = false;
+    var i = document.getElementById("pin-in"); i.value = "";
+    document.getElementById("pin-err").textContent = "";
+    setTimeout(function () { i.focus(); }, 60);
+    bioRefresh(true);
+  }
+  function tryUnlock() {
+    var p = getPin(), i = document.getElementById("pin-in"), er = document.getElementById("pin-err");
+    if (!p) { lockEl.hidden = true; return; }
+    var now = Date.now();
+    if (now < lockedUntil) { er.textContent = "Aguarde alguns segundos."; i.value = ""; return; }
+    if (hp(i.value) === p.h) { fails = 0; i.value = ""; er.textContent = ""; lockEl.hidden = true; return; }
+    i.value = ""; fails += 1;
+    if (fails >= 5) { lockedUntil = now + 30000; fails = 0; er.textContent = "Muitas tentativas. Aguarde 30 segundos."; }
+    else er.textContent = "PIN incorreto.";
+  }
+  function pinCard() {
+    var has = !!getPin();
+    return '<details class="card bk"' + (pinOpen ? " open" : "") + '><summary>Trava com PIN</summary><div class="in">' +
+      (has
+        ? '<p class="lead">O PIN está ativo neste aparelho. O app pede o PIN ao abrir e depois de 1 minuto fora da tela.</p><div class="row"><button data-act="pin-lock">Travar agora</button><button class="danger" data-act="pin-off">Remover PIN</button></div>' + bioRow()
+        : '<p class="lead">Peça um PIN de 4 a 6 números para abrir o app neste aparelho. É uma trava simples de privacidade. Se esquecer o PIN, será preciso limpar os dados do site no Chrome, então gere o backup antes.</p><div class="field"><label for="pin-new">Novo PIN</label><input id="pin-new" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password"></div><button class="primary" data-act="pin-on" style="width:100%">Ativar PIN</button>') +
+      '<p class="status" id="pin-msg">' + esc(pinNote) + '</p></div></details>';
+  }
+
+  function setStatus(m) {
+    message = m;
+    var st = app.querySelector(".status");
+    if (st) st.textContent = m;
+    clearTimeout(msgT);
+    msgT = setTimeout(function () { message = ""; var s2 = app.querySelector(".status"); if (s2) s2.textContent = ""; }, 6000);
+  }
+  function fsOn() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function enterFs() {
+    try {
+      var el = document.documentElement, f = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (f) { var r = f.call(el); if (r && r.catch) r.catch(function () {}); }
+    } catch (e) {}
+  }
+  function toggleFs() {
+    try {
+      if (fsOn()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } else { enterFs(); }
+    } catch (e) {}
+  }
+  function makeBackup() {
+    var ta = document.getElementById("backup-code");
+    if (!ta) return;
+    var code = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    ta.value = code; ta.focus(); ta.select();
+    try {
+      navigator.clipboard.writeText(code).then(
+        function () { setStatus("Código copiado. Guarde em um lugar seguro."); },
+        function () { setStatus("Código gerado. Copie o texto da caixa."); }
+      );
+    } catch (e) { setStatus("Código gerado. Copie o texto da caixa."); }
+  }
+  function restoreBackup() {
+    var ta = document.getElementById("backup-code");
+    var v = ta ? ta.value.trim() : "";
+    var n = null;
+    try { n = normalize(JSON.parse(decodeURIComponent(escape(atob(v))))); } catch (e) { n = null; }
+    if (!n) { setStatus("Código inválido. Cole o código completo."); return; }
+    state = n; noteDraft = null; confirming = false;
+    writeLocal(); save(); render();
+    setStatus("Backup restaurado.");
+  }
+  function runSplash() {
+    var sp = document.getElementById("splash");
+    if (!sp) return;
+    var fill = document.getElementById("sp-fill"), pct = document.getElementById("sp-pct"), txt = document.getElementById("sp-txt");
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var dur = reduce ? 700 : 2600, t0 = null, done = false;
+    var steps = [[0, "Alistando recrutas"], [35, "Conferindo patentes"], [70, "Montando o quadro de honra"], [100, "Pronto"]];
+    function finish() {
+      if (done) return;
+      done = true; sp.classList.add("out"); replay();
+      setTimeout(function () { sp.hidden = true; }, 500);
+    }
+    function frame(ts) {
+      if (done) return;
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur);
+      var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      var v = Math.round(e * 100);
+      fill.style.width = v + "%"; pct.textContent = v + "%";
+      var label = steps[0][1];
+      for (var i = 0; i < steps.length; i++) { if (v >= steps[i][0]) label = steps[i][1]; }
+      txt.textContent = label;
+      if (p >= 1) setTimeout(finish, 300); else requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    setTimeout(finish, dur + 3000);
+    sp.addEventListener("click", finish);
+  }
+
+  document.addEventListener("click", function (e) {
+    var tb = e.target.closest("button[data-tab]");
+    if (tb) { tab = tb.getAttribute("data-tab"); message = ""; render(); replay(); return; }
+    var tg = e.target.closest("button[data-trig]");
+    if (tg) { var v = tg.getAttribute("data-trig"); pendingTrig = pendingTrig === v ? "" : v; render(); return; }
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var act = b.getAttribute("data-act");
+    if (act === "start") {
+      var n = parseInt(document.getElementById("dias-anteriores").value, 10);
+      if (isNaN(n) || n < 0) n = 0;
+      var st = addDays(todayStr(), Math.min(n, 3650));
+      state = normalize({ origin: st, start: st, seen: rankIndex(Math.min(n, 3650)) });
+      message = "Alistamento feito. Bem-vindo ao quartel.";
+      save();
+    } else if (act === "ask") {
+      confirming = true; message = ""; pendingTrig = "";
+    } else if (act === "cancel") {
+      confirming = false;
+    } else if (act === "reset") {
+      var dd = daysSince(state.start);
+      state.relapses.push({ d: todayStr(), t: pendingTrig });
+      state.streaks.push(dd); if (state.streaks.length > 40) state.streaks.shift();
+      state.best = Math.max(state.best, dd);
+      state.attempts += 1;
+      state.start = todayStr();
+      state.seen = 0;
+      confirming = false; pendingTrig = "";
+      message = "Contagem reiniciada. Dia 0, Recruta. Recomeçar também faz parte do treino.";
+      save();
+    } else if (act === "note") {
+      var ta = document.getElementById("nota-hoje");
+      var txt = ta ? ta.value.trim().slice(0, 280) : "";
+      if (txt) { state.notes[todayStr()] = txt; ensureWeek(); if (state.week.noteDays.indexOf(todayStr()) < 0) state.week.noteDays.push(todayStr()); } else delete state.notes[todayStr()];
+      noteDraft = txt;
+      message = txt ? "Anotação salva." : "Anotação removida."; checkChallenges();
+      save();
+    } else if (act === "promo-ok") {
+      state.seen = rankIndex(daysSince(state.start));
+      hideOv(); save();
+    } else if (act === "urge") {
+      startUrge(); return;
+    } else if (act === "urge-close") {
+      hideOv(); return;
+    } else if (act === "urge-win") {
+      state.urges += 1; ensureWeek(); state.week.urges += 1; message = "Vontade vencida. Mais uma vitória no seu histórico."; checkChallenges();
+      hideOv(); save();
+    } else if (act === "unlock") {
+      tryUnlock(); return;
+    } else if (act === "commit-save") {
+      var gi = parseInt((document.getElementById("meta-in") || {}).value, 10);
+      state.goal = gi >= 1 ? Math.min(gi, 3650) : 0;
+      state.why = ((document.getElementById("motivo-in") || {}).value || "").trim().slice(0, 160);
+      commitNote = "Compromisso salvo.";
+      setTimeout(function () { commitNote = ""; var ce = document.getElementById("commit-msg"); if (ce) ce.textContent = ""; }, 6000);
+      save();
+    } else if (act === "bio-on") {
+      bioEnable().then(function () { pinOpen = true; pinNote = "Biometria ativada. Você poderá abrir o app com a digital ou o rosto."; render(); })
+        .catch(function () { pinOpen = true; pinNote = "Não foi possível ativar a biometria aqui. Continue usando o PIN."; render(); });
+      return;
+    } else if (act === "bio-off") {
+      setBio(null); pinOpen = true; pinNote = "Biometria desativada.";
+    } else if (act === "bio-unlock") {
+      bioUnlock(false); return;
+    } else if (act === "pin-lock") {
+      showLock(); return;
+    } else if (act === "pin-on") {
+      var pv = (document.getElementById("pin-new") || {}).value || "";
+      if (!/^\d{4,6}$/.test(pv)) { var pm = document.getElementById("pin-msg"); if (pm) pm.textContent = "Use de 4 a 6 números."; return; }
+      setPinStore({ h: hp(pv), n: pv.length });
+      pinOpen = true; pinNote = "PIN ativado. Ele será pedido na próxima vez que você abrir o app.";
+    } else if (act === "pin-off") {
+      setPinStore(null); setBio(null); pinOpen = true; pinNote = "PIN removido.";
+    } else if (act === "board-join") {
+      var bn = ((document.getElementById("board-name") || {}).value || "").trim().slice(0, 24);
+      if (!bn) { var be = document.getElementById("board-err"); if (be) be.textContent = "Escolha um apelido."; return; }
+      state.name = bn; state.board = true; save();
+    } else if (act === "board-leave") {
+      state.board = false;
+      if (dbh && boardUid) { boardSaving = boardSaving.then(function () { return dbh.collection("board").doc(boardUid).delete(); }).catch(function () {}); }
+      save();
+    } else if (act === "fs") {
+      toggleFs(); return;
+    } else if (act === "bk-make") {
+      makeBackup(); return;
+    } else if (act === "bk-restore") {
+      restoreBackup(); return;
+    } else if (act === "share") {
+      openShare(); return;
+    } else if (act === "share-send") {
+      sendCard(); return;
+    }
+    render();
+  });
+  document.addEventListener("input", function (e) {
+    if (!e.target) return;
+    if (e.target.id === "pin-in") { var pp = getPin(); if (pp && e.target.value.length >= pp.n) tryUnlock(); return; }
+    if (e.target.id === "nota-hoje") noteDraft = e.target.value;
+    if (e.target.id === "apelido") {
+      state.name = e.target.value.slice(0, 24);
+      clearTimeout(shareTimer); shareTimer = setTimeout(refreshCard, 350);
+      clearTimeout(saveTimer); saveTimer = setTimeout(save, 800);
+    }
+  });
+
+  function maybeRefresh() { if (state.start && daysSince(state.start) !== lastD) { noteDraft = null; render(); } }
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    if (hiddenAt && Date.now() - hiddenAt > 60000) showLock();
+    maybeRefresh();
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target && e.target.id === "pin-in") tryUnlock(); });
+  showLock();
+  checkBio().then(function () { bioRefresh(true); if (state.start) render(); });
+  setInterval(maybeRefresh, 60000);
+
+  var fsTried = false;
+  document.addEventListener("pointerdown", function (e) {
+    if (fsTried) return;
+    fsTried = true;
+    if (e.target && e.target.closest && e.target.closest('[data-act="fs"]')) return;
+    if (fsOk && !fsOn()) enterFs();
+  });
+  var storageOk = true;
+  try { localStorage.setItem("op365-test", "1"); storageOk = localStorage.getItem("op365-test") === "1"; localStorage.removeItem("op365-test"); } catch (e) { storageOk = false; }
+  if (!storageOk) noteEl.textContent = "Atenção: este navegador não está guardando os dados deste arquivo. Use o Backup, no fim da tela Hoje, para não perder sua contagem.";
+  runSplash();
+
+  var local = normalize(readLocal());
+  if (local) state = local;
+  render();
+
+  function withTimeout(p, ms) {
+    return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, ms); })]);
+  }
+  (async function () {
+    try {
+      if (!window.claude || !window.claude.use) return;
+      try {
+        var dlns = await withTimeout(window.claude.use("downloads"), 10000);
+        if (dlns && state.start) { dl = dlns; render(); } else if (dlns) { dl = dlns; }
+      } catch (e) {}
+      var db = await withTimeout(window.claude.use("db"), 10000);
+      var user = await withTimeout(window.claude.use("user"), 10000);
+      if (!db || !user) return;
+      var uid = await user.id();
+      if (!uid) return;
+      var ref = db.doc("data/users/" + uid + "/streak");
+      var snap = await withTimeout(ref.get(), 10000);
+      var remote = snap.exists ? normalize(snap.data()) : null;
+      docRef = ref; dbh = db; boardUid = uid; subscribeBoard();
+      if (tab === "patentes") render();
+      if (remote) {
+        state = remote; writeLocal(); render();
+      } else if (state.start) {
+        save();
+      }
+    } catch (e) { /* keep the browser copy */ }
+  })();
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+}
+</script>
+</body>
+</html>
