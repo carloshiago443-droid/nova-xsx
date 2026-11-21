@@ -1,0 +1,358 @@
+name: Gerar APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar o Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar o Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Criar o projeto Android
+        run: |
+          set -e
+          mkdir -p android android/app android/app/src/main android/app/src/main/assets android/app/src/main/java/com/novaxs/operacao365 android/app/src/main/res/drawable-nodpi android/app/src/main/res/mipmap-anydpi-v26 android/app/src/main/res/mipmap-hdpi android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi android/app/src/main/res/values android/app/src/main/res/values-v31 android/app/src/main/res/xml
+          cat > android/settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "Operacao365"
+          include ':app'
+          EOF
+          cat > android/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+          }
+          EOF
+          cat > android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          android.nonTransitiveRClass=true
+          EOF
+          cat > android/app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.novaxs.operacao365'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "com.novaxs.operacao365"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")
+                  versionName "1.0"
+              }
+
+              signingConfigs {
+                  debug {
+                      storeFile file('debug.keystore')
+                      storePassword 'android'
+                      keyAlias 'androiddebugkey'
+                      keyPassword 'android'
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          dependencies {
+              implementation 'androidx.webkit:webkit:1.11.0'
+              implementation 'androidx.core:core:1.13.1'
+          }
+          EOF
+          cat > android/app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET" />
+
+              <application
+                  android:allowBackup="false"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="@string/app_name"
+                  android:theme="@style/AppTheme">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="portrait"
+                      android:windowSoftInputMode="adjustResize"
+                      android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|uiMode">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+
+                  <provider
+                      android:name="androidx.core.content.FileProvider"
+                      android:authorities="${applicationId}.fileprovider"
+                      android:exported="false"
+                      android:grantUriPermissions="true">
+                      <meta-data
+                          android:name="android.support.FILE_PROVIDER_PATHS"
+                          android:resource="@xml/file_paths" />
+                  </provider>
+              </application>
+          </manifest>
+          EOF
+          cat > android/app/src/main/java/com/novaxs/operacao365/MainActivity.java <<'EOF'
+          package com.novaxs.operacao365;
+
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.util.Base64;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebResourceResponse;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          import androidx.core.content.FileProvider;
+          import androidx.webkit.WebViewAssetLoader;
+
+          import java.io.File;
+          import java.io.FileOutputStream;
+
+          public class MainActivity extends Activity {
+
+              private static final String HOST = "appassets.androidplatform.net";
+              private WebView web;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  web = new WebView(this);
+                  web.setBackgroundColor(Color.parseColor("#12160F"));
+                  setContentView(web);
+
+                  final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
+                          .setDomain(HOST)
+                          .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                          .build();
+
+                  WebSettings settings = web.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setAllowFileAccess(false);
+                  settings.setAllowContentAccess(false);
+
+                  web.addJavascriptInterface(new Bridge(), "AndroidBridge");
+
+                  web.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                          return loader.shouldInterceptRequest(request.getUrl());
+                      }
+
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                          Uri uri = request.getUrl();
+                          if (HOST.equals(uri.getHost())) {
+                              return false;
+                          }
+                          try {
+                              startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                          } catch (Exception ignored) {
+                          }
+                          return true;
+                      }
+                  });
+
+                  web.loadUrl("https://" + HOST + "/assets/index.html");
+              }
+
+              /** Chamada pelo app (JavaScript) para compartilhar o cartão da patente. */
+              private class Bridge {
+                  @JavascriptInterface
+                  public void shareImage(String base64, final String text) {
+                      final byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                      runOnUiThread(new Runnable() {
+                          @Override
+                          public void run() {
+                              try {
+                                  File dir = new File(getCacheDir(), "shared");
+                                  dir.mkdirs();
+                                  File file = new File(dir, "operacao-365-patente.png");
+                                  FileOutputStream out = new FileOutputStream(file);
+                                  out.write(data);
+                                  out.close();
+
+                                  Uri uri = FileProvider.getUriForFile(
+                                          MainActivity.this, getPackageName() + ".fileprovider", file);
+
+                                  Intent send = new Intent(Intent.ACTION_SEND);
+                                  send.setType("image/png");
+                                  send.putExtra(Intent.EXTRA_STREAM, uri);
+                                  send.putExtra(Intent.EXTRA_TEXT, text);
+                                  send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                  startActivity(Intent.createChooser(send, "Compartilhar cartão"));
+                              } catch (Exception ignored) {
+                              }
+                          }
+                      });
+                  }
+              }
+          }
+          EOF
+          cat > android/app/src/main/res/xml/file_paths.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths>
+              <cache-path name="shared" path="shared/" />
+          </paths>
+          EOF
+          cat > android/app/src/main/res/values/strings.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">Operação 365</string>
+          </resources>
+          EOF
+          cat > android/app/src/main/res/values/colors.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="bg">#12160F</color>
+          </resources>
+          EOF
+          cat > android/app/src/main/res/values/themes.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+                  <item name="android:windowBackground">@color/bg</item>
+                  <item name="android:statusBarColor">@color/bg</item>
+                  <item name="android:navigationBarColor">@color/bg</item>
+                  <item name="android:windowLightStatusBar">false</item>
+              </style>
+          </resources>
+          EOF
+          cat > android/app/src/main/res/values-v31/themes.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+                  <item name="android:windowBackground">@color/bg</item>
+                  <item name="android:statusBarColor">@color/bg</item>
+                  <item name="android:navigationBarColor">@color/bg</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowSplashScreenBackground">@color/bg</item>
+                  <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+              </style>
+          </resources>
+          EOF
+          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/bg" />
+              <foreground android:drawable="@drawable/ic_launcher_fg" />
+          </adaptive-icon>
+          EOF
+          base64 -d > android/app/debug.keystore <<'EOF'
+          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
+          UZVvkdsy3MMCAicQ
+          EOF
+          cp index.html android/app/src/main/assets/index.html
+          cp icon-192.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          cp icon-192.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp icon-192.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp icon-192.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp maskable-512.png android/app/src/main/res/drawable-nodpi/ic_launcher_fg.png
+
+      - name: Compilar o APK
+        working-directory: android
+        run: gradle assembleDebug --no-daemon
+
+      - name: Renomear o APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk Operacao-365.apk
+
+      - name: Guardar o APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Operacao-365-apk
+          path: Operacao-365.apk
